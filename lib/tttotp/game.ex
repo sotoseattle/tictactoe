@@ -1,21 +1,15 @@
 defmodule Tttotp.Game do
   alias Tttotp.{Player, Board, Coord, Rules}
 
-  use GenServer
+  # use GenServer
+  use GenServer, start: {__MODULE__, :start_link, []}, restart: :transient
 
   @players [:player1, :player2]
 
-  def start_link(name) do
-    GenServer.start_link(__MODULE__, name, [])
-  end
+  # CLIENT INTERFACE FUNCTIONS
 
-  def init(name) do
-    {:ok, %{
-      player1: Player.new(name, "x"),
-      player2: Player.new("n.a.", "o"),
-      board: Board.new(),
-      rules: Rules.new(),
-      winner: nil}}
+  def start_link(name) do
+    GenServer.start_link(__MODULE__, name, [name: via_tuple(name)])
   end
 
   def add_player(game, name) when is_binary(name) do
@@ -29,6 +23,15 @@ defmodule Tttotp.Game do
   def move(_g, _p, _x, _y), do: {:error, :player_does_not_exist}
 
   # SERVER CALLBACKS
+
+  def init(name) do
+    {:ok, %{
+      player1: Player.new(name, "x"),
+      player2: Player.new("n.a.", "o"),
+      board: Board.new(),
+      rules: Rules.new(),
+      winner: nil}}
+  end
 
   def handle_call({:add_player, name}, _from, game) do
     with {:ok, rules} <- Rules.check(game.rules, :add_player)
@@ -59,16 +62,25 @@ defmodule Tttotp.Game do
     end
   end
 
+  def via_tuple(name), do:
+    {:via, Registry, {Registry.Game, name}}
 
-  defp update_rules(game, rules), do: %{game | rules: rules}
+  defp update_rules(game, rules), do:
+    %{game | rules: rules}
 
-  defp reply(game, reply), do: {:reply, reply, game}
+  defp reply(game, reply), do:
+    {:reply, reply, game}
 
-  defp update_player2(game, name), do: put_in(game.player2.name, name)
+  defp update_player2(game, name), do:
+    put_in(game.player2.name, name)
 
-  defp update_board(game, board), do: %{game | board: board}
+  defp update_board(game, board), do:
+    %{game | board: board}
 
-  defp update_winner(game, :win, player), do: %{game | winner: game[player].name}
-  defp update_winner(game, :tie, _playe), do: %{game | winner: "tie"}
-  defp update_winner(game, _, _), do: game
+  defp update_winner(game, :win, player), do:
+    %{game | winner: game[player].name}
+  defp update_winner(game, :tie, _playe), do:
+    %{game | winner: "tie"}
+  defp update_winner(game, _, _), do:
+    game
 end
