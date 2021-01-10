@@ -25,5 +25,4 @@ defmodule Tttotp.GameSupervisor do
     |> Game.via_tuple()
     |> GenServer.whereis()
   end
-
 end

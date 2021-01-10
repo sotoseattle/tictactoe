@@ -1,6 +1,8 @@
 defmodule Tttotp.Game do
   alias Tttotp.{Player, Board, Coord, Rules}
 
+  @timeout 12 * 60 * 60 *1000
+
   # use GenServer
   use GenServer, start: {__MODULE__, :start_link, []}, restart: :transient
 
@@ -25,12 +27,13 @@ defmodule Tttotp.Game do
   # SERVER CALLBACKS
 
   def init(name) do
-    {:ok, %{
-      player1: Player.new(name, "x"),
-      player2: Player.new("n.a.", "o"),
-      board: Board.new(),
-      rules: Rules.new(),
-      winner: nil}}
+    {:ok,
+      %{player1: Player.new(name, "x"),
+        player2: Player.new("n.a.", "o"),
+        board: Board.new(),
+        rules: Rules.new(),
+        winner: nil},
+      @timeout}
   end
 
   def handle_call({:add_player, name}, _from, game) do
@@ -62,6 +65,10 @@ defmodule Tttotp.Game do
     end
   end
 
+  def handle_info(:timeout, game) do
+    {:stop, {:shutdown, :timeout}, game}
+  end
+
   def via_tuple(name), do:
     {:via, Registry, {Registry.Game, name}}
 
@@ -69,7 +76,7 @@ defmodule Tttotp.Game do
     %{game | rules: rules}
 
   defp reply(game, reply), do:
-    {:reply, reply, game}
+    {:reply, reply, game, @timeout}
 
   defp update_player2(game, name), do:
     put_in(game.player2.name, name)
