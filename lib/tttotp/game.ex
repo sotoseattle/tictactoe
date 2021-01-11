@@ -27,13 +27,21 @@ defmodule Tttotp.Game do
   # SERVER CALLBACKS
 
   def init(name) do
-    {:ok,
-      %{player1: Player.new(name, "x"),
-        player2: Player.new("n.a.", "o"),
-        board: Board.new(),
-        rules: Rules.new(),
-        winner: nil},
-      @timeout}
+    state = case :ets.lookup(:game_state, name) do
+      [] -> initialized_game(name)
+      [{_k, game}] -> game
+    end
+
+    :ets.insert(:game_state, {name, state})
+    {:ok, state, @timeout}
+  end
+
+  defp initialized_game(name) do
+    %{player1: Player.new(name, "x"),
+      player2: Player.new("n.a.", "o"),
+      board: Board.new(),
+      rules: Rules.new(),
+      winner: nil}
   end
 
   def handle_call({:add_player, name}, _from, game) do
@@ -75,8 +83,10 @@ defmodule Tttotp.Game do
   defp update_rules(game, rules), do:
     %{game | rules: rules}
 
-  defp reply(game, reply), do:
+  defp reply(game, reply) do
+    :ets.insert(:game_state, {game.player1.name, game})
     {:reply, reply, game, @timeout}
+  end
 
   defp update_player2(game, name), do:
     put_in(game.player2.name, name)

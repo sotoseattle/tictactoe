@@ -7,6 +7,8 @@ defmodule Tttotp.Application do
       Tttotp.GameSupervisor
     ]
 
+    :ets.new(:game_state, [:public, :named_table])
+
     opts = [strategy: :one_for_one, name: Tttotp.Supervisor]
     Supervisor.start_link(children, opts)
   end
