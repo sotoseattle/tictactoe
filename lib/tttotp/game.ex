@@ -77,6 +77,12 @@ defmodule Tttotp.Game do
     {:stop, {:shutdown, :timeout}, game}
   end
 
+  def terminate({:shutdown, :timeout}, game) do
+    :ets.delete(:game_state, game.player1.name)
+    :ok
+  end
+  def terminate(_reason, _state), do: :ok
+
   def via_tuple(name), do:
     {:via, Registry, {Registry.Game, name}}
 
